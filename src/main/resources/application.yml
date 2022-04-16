@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: 'dji-trade-data'
+
+springdoc:
+  version: '@springdoc.version@'
+  swagger-ui:
+    use-root-path: true
