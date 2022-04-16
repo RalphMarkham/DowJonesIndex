@@ -1,0 +1,23 @@
+version: '3.3'
+
+services:
+  #service 1: definition of mongo database
+  mongo_db:
+    image: mongo
+    container_name: mongoDB
+    restart: always
+    ports:
+      - "27017:27017"
+
+  #service 2: definition of your spring-boot app
+  tradedataservice:
+    image: dji-trade-data-service
+    container_name: dji-trade-data-app
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo_db
