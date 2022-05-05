@@ -2,6 +2,12 @@ spring:
   application:
     name: 'dji-trade-data'
 
+  data:
+    mongodb:
+      host: mongoDB
+      port: 27017
+      database: tradeData
+
 thread-pool-task:
   core-pool-size: 2
   max-pool-size: 4

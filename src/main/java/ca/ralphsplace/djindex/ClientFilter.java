@@ -1,4 +1,4 @@
-package ca.ralphsplace.djindex.mongo;
+package ca.ralphsplace.djindex;
 
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -16,11 +16,7 @@ public class ClientFilter extends OncePerRequestFilter {
         if (clientId == null || clientId.trim().isEmpty()) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         } else {
-            // TODO: dynamic generation of mongodb url
-            String dbConnectionString = "mongodb://mongoDB:27017/"+clientId;
-            ClientConnectionString.setClientConnectionStr(dbConnectionString);
             filterChain.doFilter(request,response);
-            ClientConnectionString.clear();
         }
     }
 }

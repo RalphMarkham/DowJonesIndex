@@ -1,5 +1,6 @@
 package ca.ralphsplace.djindex.controller;
 
+import ca.ralphsplace.djindex.model.ClientTradeData;
 import ca.ralphsplace.djindex.model.TradeDataRecord;
 import ca.ralphsplace.djindex.service.TradeDataService;
 import com.opencsv.bean.CsvToBeanBuilder;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,8 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
@@ -56,8 +57,8 @@ public class TradeDataController {
             @ApiResponse(responseCode = "401", description = "UNAUTHORIZED")})
     @GetMapping(value = "/{stock}", produces = {"application/json"}, headers = {"X-client_id"})
     @Async("controllerAsyncExecutor")
-    public CompletableFuture<ResponseEntity<List<TradeDataRecord>>> getTradeDataTicker(@PathVariable final String stock) {
-        return tradeDataService.findByStock(stock)
+    public CompletableFuture<ResponseEntity<Set<TradeDataRecord>>> getTradeDataTicker(@RequestHeader("X-client_id") String clientId, @PathVariable final String stock) {
+        return tradeDataService.findByStock(clientId, stock)
                 .thenApply(ResponseEntity::ok)
                 .exceptionally(t -> {
                     LOG.error(ERROR_MSG, t);
@@ -74,9 +75,13 @@ public class TradeDataController {
             @ApiResponse(responseCode = "401", description = "UNAUTHORIZED")})
     @PostMapping(value = "/", consumes = {"application/json"}, produces = {"application/json"}, headers = {"X-client_id"})
     @Async("controllerAsyncExecutor")
-    public CompletableFuture<ResponseEntity<TradeDataRecord>> createTradeData(@RequestBody final TradeDataRecord tradeDataRecord) {
-        return tradeDataService.save(tradeDataRecord.setId())
-                .thenApply(c -> ResponseEntity.status(HttpStatus.CREATED).body(c))
+    public CompletableFuture<ResponseEntity<String>> createTradeData(@RequestHeader("X-client_id") String clientId, @RequestBody final TradeDataRecord tradeDataRecord) {
+        return tradeDataService.save(new ClientTradeData(clientId, Set.of(tradeDataRecord)))
+                .<ResponseEntity<String>>thenApply(updateResult ->
+                    (updateResult.wasAcknowledged() ?
+                            ResponseEntity.status(HttpStatus.CREATED).build() :
+                            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build())
+                )
                 .exceptionally(t -> {
                     LOG.error(ERROR_MSG, t);
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -92,34 +97,34 @@ public class TradeDataController {
             @ApiResponse(responseCode = "401", description = "UNAUTHORIZED")})
     @PostMapping(value = "/bulk-insert", consumes = {"multipart/form-data"}, produces = {"application/json"}, headers = {"X-client_id"})
     @Async("controllerAsyncExecutor")
-    public CompletableFuture<ResponseEntity<String>> bulkUpdate(@RequestParam final MultipartFile file) {
-        CompletableFuture<List<TradeDataRecord>> cfRecords = CompletableFuture.supplyAsync(() -> {
+    public CompletableFuture<ResponseEntity<String>> bulkUpdate(@RequestHeader("X-client_id") String clientId, @RequestParam final MultipartFile file) {
+        CompletableFuture<Set<TradeDataRecord>> cfRecords = CompletableFuture.supplyAsync(() -> {
                     try {
                         return new CsvToBeanBuilder<TradeDataRecord>(
                                 new BufferedReader(new InputStreamReader(file.getInputStream())))
                                         .withType(TradeDataRecord.class)
                                         .build()
                                         .stream()
-                                        .map(TradeDataRecord::setId)
-                                        .collect(Collectors.toList());
+                                        .collect(Collectors.toSet());
                     } catch (IOException e) {
                         throw new CompletionException(e);
                     }
                 });
 
-        List<TradeDataRecord> records = new ArrayList<>();
         try {
-            records = cfRecords.join();
+            return tradeDataService.bulkSave(new ClientTradeData(clientId, cfRecords.join()))
+                    .<ResponseEntity<String>>thenApply(updateResult ->
+                        (updateResult.wasAcknowledged() ?
+                                ResponseEntity.status(HttpStatus.CREATED).build() :
+                                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build())
+                    )
+                    .exceptionally(t -> {
+                        LOG.error(ERROR_MSG, t);
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                    });
         } catch (CompletionException e) {
             LOG.error(ERROR_MSG, e);
             return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.BAD_REQUEST).build());
         }
-
-        return tradeDataService.save(records)
-                .thenApply(c -> ResponseEntity.status(HttpStatus.CREATED).body("trade data records created:"+c))
-                .exceptionally(t -> {
-                    LOG.error("error caught exception: ", t);
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-                });
     }
 }

@@ -2,16 +2,11 @@ package ca.ralphsplace.djindex.model;
 
 
 import com.opencsv.bean.CsvBindByName;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Objects;
 
-@Document(collection = "weeklyTradeData")
-public class TradeDataRecord {
 
-    @Id
-    private String id;
+public class TradeDataRecord {
 
     @CsvBindByName(column = "quarter", required = true)
     private String quarter;
@@ -45,32 +40,6 @@ public class TradeDataRecord {
     private String daysToNextDividend;
     @CsvBindByName(column = "percent_return_next_dividend")
     private String percentReturnNextDividend;
-
-    public static TradeDataRecord buildTradeDataRecord(String quarter, String stock, String date, String open, String high, String low, String close, String volume, String percentChangePrice, String percentChangeVolumeOverLastWk, String previousWeeksVolume, String nextWeeksOpen, String nextWeeksClose, String percentChangeNextWeeksPrice, String daysToNextDividend, String percentReturnNextDividend) {
-        TradeDataRecord dataRecord = new TradeDataRecord();
-        dataRecord.setQuarter(quarter);
-        dataRecord.setStock(stock);
-        dataRecord.setDate(date);
-        dataRecord.setOpen(open);
-        dataRecord.setHigh(high);
-        dataRecord.setLow(low);
-        dataRecord.setClose(close);
-        dataRecord.setVolume(volume);
-        dataRecord.setPercentChangePrice(percentChangePrice);
-        dataRecord.setPercentChangeVolumeOverLastWk(percentChangeVolumeOverLastWk);
-        dataRecord.setPreviousWeeksVolume(previousWeeksVolume);
-        dataRecord.setNextWeeksOpen(nextWeeksOpen);
-        dataRecord.setNextWeeksClose(nextWeeksClose);
-        dataRecord.setPercentChangeNextWeeksPrice(percentChangeNextWeeksPrice);
-        dataRecord.setDaysToNextDividend(daysToNextDividend);
-        dataRecord.setPercentReturnNextDividend(percentReturnNextDividend);
-        return dataRecord;
-    }
-
-    public TradeDataRecord setId() {
-        id = stock + date;
-        return this;
-    }
 
     public String getQuarter() {
         return quarter;
@@ -216,7 +185,6 @@ public class TradeDataRecord {
     @Override
     public String toString() {
         return "TradeDataRecord{" +
-                "id='" + id + '\'' +
                 ", quarter='" + quarter + '\'' +
                 ", stock='" + stock + '\'' +
                 ", date='" + date + '\'' +

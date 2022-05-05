@@ -1,8 +1,12 @@
 package ca.ralphsplace.djindex;
 
 import ca.ralphsplace.djindex.controller.TradeDataController;
+import ca.ralphsplace.djindex.model.ClientTradeData;
 import ca.ralphsplace.djindex.model.TradeDataRecord;
 import ca.ralphsplace.djindex.service.TradeDataService;
+import com.mongodb.client.result.UpdateResult;
+import com.opencsv.bean.CsvToBeanBuilder;
+import org.bson.BsonValue;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -12,13 +16,14 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
+import java.io.BufferedReader;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -28,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(TradeDataController.class)
 class WebLayerTest {
 
-    TradeDataRecord t1 = TradeDataRecord.buildTradeDataRecord("1","AA","1/14/2011","$16.71","$16.71","$15.64","$15.97","242963398","-4.42849","1.380223028","239655616","$16.19","$15.79","-2.47066","19","0.187852");
+    TradeDataRecord t1 = buildTradeDataRecord("1","AA","1/14/2011","$16.71","$16.71","$15.64","$15.97","242963398","-4.42849","1.380223028","239655616","$16.19","$15.79","-2.47066","19","0.187852");
 
     @Autowired
     private MockMvc mockMvc;
@@ -38,7 +43,28 @@ class WebLayerTest {
 
     @Test
     void shouldReturnSavedTradeData() throws Exception {
-        when(repository.save(t1)).thenReturn(CompletableFuture.completedFuture(t1));
+        when(repository.save(new ClientTradeData("abc", Set.of(t1)))).thenReturn(CompletableFuture.completedFuture(new UpdateResult(){
+
+            @Override
+            public boolean wasAcknowledged() {
+                return true;
+            }
+
+            @Override
+            public long getMatchedCount() {
+                return 1;
+            }
+
+            @Override
+            public long getModifiedCount() {
+                return 1;
+            }
+
+            @Override
+            public BsonValue getUpsertedId() {
+                return null;
+            }
+        }));
 
         MvcResult mvcResult = mockMvc.perform(post("/api/trade-data/").header("X-client_id","abc").contentType("application/json")
                         .content("{\"quarter\":\"1\",\"stock\":\"AA\",\"date\":\"1/14/2011\",\"open\":\"$16.71\",\"high\":\"$16.71\",\"low\":\"$15.64\",\"close\":\"$15.97\",\"volume\":\"242963398\",\"percentChangePrice\":\"-4.42849\",\"percentChangeVolumeOverLastWk\":\"1.380223028\",\"previousWeeksVolume\":\"239655616\",\"nextWeeksOpen\":\"$16.19\",\"nextWeeksClose\":\"$15.79\",\"percentChangeNextWeeksPrice\":\"-2.47066\",\"daysToNextDividend\":\"19\",\"percentReturnNextDividend\":\"0.187852\"}"))
@@ -48,16 +74,12 @@ class WebLayerTest {
                 .andReturn();
 
         mockMvc.perform(asyncDispatch(mvcResult))
-                .andExpect(status().isCreated())
-                .andExpect(content().string(containsString("{\"quarter\":\"1\",\"stock\":\"AA\",\"date\":\"1/14/2011\",\"open\":\"$16.71\",\"high\":\"$16.71\",\"low\":\"$15.64\",\"close\":\"$15.97\",\"volume\":\"242963398\",\"percentChangePrice\":\"-4.42849\",\"percentChangeVolumeOverLastWk\":\"1.380223028\",\"previousWeeksVolume\":\"239655616\",\"nextWeeksOpen\":\"$16.19\",\"nextWeeksClose\":\"$15.79\",\"percentChangeNextWeeksPrice\":\"-2.47066\",\"daysToNextDividend\":\"19\",\"percentReturnNextDividend\":\"0.187852\"}")));
+                .andExpect(status().isCreated());
     }
 
     @Test
     void shouldReturnQueriedTradeData() throws Exception {
-        List<TradeDataRecord> r = new ArrayList<>();
-        r.add(t1);
-
-        when(repository.findByStock("AA")).thenReturn(CompletableFuture.completedFuture(r));
+        when(repository.findByStock("abc","AA")).thenReturn(CompletableFuture.completedFuture(Set.of(t1)));
 
         MvcResult mvcResult = mockMvc.perform(get("/api/trade-data/AA").header("X-client_id","abc"))
                 .andDo(print())
@@ -100,7 +122,34 @@ class WebLayerTest {
         MockMultipartFile tradeData =
                 new MockMultipartFile("file", "fileName","text/plain", s.getBytes(StandardCharsets.UTF_8));
 
-        when(repository.save(anyList())).thenReturn(CompletableFuture.supplyAsync(() -> Integer.valueOf(24)));
+        var set = new CsvToBeanBuilder<TradeDataRecord>(new BufferedReader(new StringReader(s)))
+                                        .withType(TradeDataRecord.class)
+                .build()
+                .stream()
+                .collect(Collectors.toSet());
+
+        when(repository.bulkSave(new ClientTradeData("abc", set))).thenReturn(CompletableFuture.supplyAsync(() -> new UpdateResult(){
+
+            @Override
+            public boolean wasAcknowledged() {
+                return true;
+            }
+
+            @Override
+            public long getMatchedCount() {
+                return 1;
+            }
+
+            @Override
+            public long getModifiedCount() {
+                return 1;
+            }
+
+            @Override
+            public BsonValue getUpsertedId() {
+                return null;
+            }
+        }));
 
         MvcResult mvcResult = mockMvc.perform(multipart("/api/trade-data/bulk-insert")
                         .file(tradeData)
@@ -111,7 +160,27 @@ class WebLayerTest {
                 .andReturn();
 
         mockMvc.perform(asyncDispatch(mvcResult))
-                .andExpect(status().isCreated())
-                .andExpect(content().string(containsString("trade data records created:24")));
+                .andExpect(status().isCreated());
+    }
+
+    private static TradeDataRecord buildTradeDataRecord(String quarter, String stock, String date, String open, String high, String low, String close, String volume, String percentChangePrice, String percentChangeVolumeOverLastWk, String previousWeeksVolume, String nextWeeksOpen, String nextWeeksClose, String percentChangeNextWeeksPrice, String daysToNextDividend, String percentReturnNextDividend) {
+        TradeDataRecord dataRecord = new TradeDataRecord();
+        dataRecord.setQuarter(quarter);
+        dataRecord.setStock(stock);
+        dataRecord.setDate(date);
+        dataRecord.setOpen(open);
+        dataRecord.setHigh(high);
+        dataRecord.setLow(low);
+        dataRecord.setClose(close);
+        dataRecord.setVolume(volume);
+        dataRecord.setPercentChangePrice(percentChangePrice);
+        dataRecord.setPercentChangeVolumeOverLastWk(percentChangeVolumeOverLastWk);
+        dataRecord.setPreviousWeeksVolume(previousWeeksVolume);
+        dataRecord.setNextWeeksOpen(nextWeeksOpen);
+        dataRecord.setNextWeeksClose(nextWeeksClose);
+        dataRecord.setPercentChangeNextWeeksPrice(percentChangeNextWeeksPrice);
+        dataRecord.setDaysToNextDividend(daysToNextDividend);
+        dataRecord.setPercentReturnNextDividend(percentReturnNextDividend);
+        return dataRecord;
     }
 }
