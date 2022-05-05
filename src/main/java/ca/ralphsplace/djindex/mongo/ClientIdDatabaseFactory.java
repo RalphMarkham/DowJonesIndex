@@ -1,4 +1,4 @@
-package ca.ralphsplace.djindex;
+package ca.ralphsplace.djindex.mongo;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoDatabase;

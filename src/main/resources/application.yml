@@ -2,6 +2,11 @@ spring:
   application:
     name: 'dji-trade-data'
 
+thread-pool-task:
+  core-pool-size: 2
+  max-pool-size: 4
+  queue-capacity: 500
+
 springdoc:
   version: '@springdoc.version@'
   swagger-ui:

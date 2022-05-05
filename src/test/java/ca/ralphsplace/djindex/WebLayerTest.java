@@ -1,28 +1,34 @@
 package ca.ralphsplace.djindex;
 
+import ca.ralphsplace.djindex.controller.TradeDataController;
+import ca.ralphsplace.djindex.model.TradeDataRecord;
+import ca.ralphsplace.djindex.service.TradeDataService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(TradeDataController.class)
 class WebLayerTest {
 
-    TradeDataRecord t1 = new TradeDataRecord("1","AA","1/14/2011","$16.71","$16.71","$15.64","$15.97","242963398","-4.42849","1.380223028","239655616","$16.19","$15.79","-2.47066","19","0.187852");
+    TradeDataRecord t1 = TradeDataRecord.buildTradeDataRecord("1","AA","1/14/2011","$16.71","$16.71","$15.64","$15.97","242963398","-4.42849","1.380223028","239655616","$16.19","$15.79","-2.47066","19","0.187852");
 
     @Autowired
     private MockMvc mockMvc;
@@ -32,22 +38,36 @@ class WebLayerTest {
 
     @Test
     void shouldReturnSavedTradeData() throws Exception {
-        when(repository.save(t1)).thenReturn(t1);
-        this.mockMvc.perform(post("/api/trade-data/").header("X-client_id","abc").contentType("application/json")
-                        .content("{\"quarter\":\"1\",\"stock\":\"AA\",\"date\":\"1/14/2011\",\"open\":\"$16.71\",\"high\":\"$16.71\",\"low\":\"$15.64\",\"close\":\"$15.97\",\"volume\":\"242963398\",\"percentChangePrice\":\"-4.42849\",\"percentChangeVolumeOverLastWk\":\"1.380223028\",\"previousWeeksVolume\":\"239655616\",\"nextWeeksOpen\":\"$16.19\",\"nextWeeksClose\":\"$15.79\",\"percentChangeNextWeeksPrice\":\"-2.47066\",\"daysToNextDividend\":\"19\",\"percentReturnNextDividend\":\"0.187852\"}"))
-                .andDo(print()).andExpect(status().isCreated())
-                .andExpect(content().string(containsString("{\"quarter\":\"1\",\"stock\":\"AA\",\"date\":\"1/14/2011\",\"open\":\"$16.71\",\"high\":\"$16.71\",\"low\":\"$15.64\",\"close\":\"$15.97\",\"volume\":\"242963398\",\"percentChangePrice\":\"-4.42849\",\"percentChangeVolumeOverLastWk\":\"1.380223028\",\"previousWeeksVolume\":\"239655616\",\"nextWeeksOpen\":\"$16.19\",\"nextWeeksClose\":\"$15.79\",\"percentChangeNextWeeksPrice\":\"-2.47066\",\"daysToNextDividend\":\"19\",\"percentReturnNextDividend\":\"0.187852\"}")));
+        when(repository.save(t1)).thenReturn(CompletableFuture.completedFuture(t1));
 
+        MvcResult mvcResult = mockMvc.perform(post("/api/trade-data/").header("X-client_id","abc").contentType("application/json")
+                        .content("{\"quarter\":\"1\",\"stock\":\"AA\",\"date\":\"1/14/2011\",\"open\":\"$16.71\",\"high\":\"$16.71\",\"low\":\"$15.64\",\"close\":\"$15.97\",\"volume\":\"242963398\",\"percentChangePrice\":\"-4.42849\",\"percentChangeVolumeOverLastWk\":\"1.380223028\",\"previousWeeksVolume\":\"239655616\",\"nextWeeksOpen\":\"$16.19\",\"nextWeeksClose\":\"$15.79\",\"percentChangeNextWeeksPrice\":\"-2.47066\",\"daysToNextDividend\":\"19\",\"percentReturnNextDividend\":\"0.187852\"}"))
+                .andDo(print())
+                .andExpect(request().asyncStarted())
+                .andDo(MockMvcResultHandlers.log())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(mvcResult))
+                .andExpect(status().isCreated())
+                .andExpect(content().string(containsString("{\"quarter\":\"1\",\"stock\":\"AA\",\"date\":\"1/14/2011\",\"open\":\"$16.71\",\"high\":\"$16.71\",\"low\":\"$15.64\",\"close\":\"$15.97\",\"volume\":\"242963398\",\"percentChangePrice\":\"-4.42849\",\"percentChangeVolumeOverLastWk\":\"1.380223028\",\"previousWeeksVolume\":\"239655616\",\"nextWeeksOpen\":\"$16.19\",\"nextWeeksClose\":\"$15.79\",\"percentChangeNextWeeksPrice\":\"-2.47066\",\"daysToNextDividend\":\"19\",\"percentReturnNextDividend\":\"0.187852\"}")));
     }
 
     @Test
     void shouldReturnQueriedTradeData() throws Exception {
         List<TradeDataRecord> r = new ArrayList<>();
         r.add(t1);
-        when(repository.findByStock("AA")).thenReturn(r);
-        this.mockMvc.perform(get("/api/trade-data/AA").header("X-client_id","abc")).andDo(print()).andExpect(status().isOk())
-                .andExpect(content().string(containsString("[{\"quarter\":\"1\",\"stock\":\"AA\",\"date\":\"1/14/2011\",\"open\":\"$16.71\",\"high\":\"$16.71\",\"low\":\"$15.64\",\"close\":\"$15.97\",\"volume\":\"242963398\",\"percentChangePrice\":\"-4.42849\",\"percentChangeVolumeOverLastWk\":\"1.380223028\",\"previousWeeksVolume\":\"239655616\",\"nextWeeksOpen\":\"$16.19\",\"nextWeeksClose\":\"$15.79\",\"percentChangeNextWeeksPrice\":\"-2.47066\",\"daysToNextDividend\":\"19\",\"percentReturnNextDividend\":\"0.187852\"}]")));
 
+        when(repository.findByStock("AA")).thenReturn(CompletableFuture.completedFuture(r));
+
+        MvcResult mvcResult = mockMvc.perform(get("/api/trade-data/AA").header("X-client_id","abc"))
+                .andDo(print())
+                .andExpect(request().asyncStarted())
+                .andDo(MockMvcResultHandlers.log())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(mvcResult))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("[{\"quarter\":\"1\",\"stock\":\"AA\",\"date\":\"1/14/2011\",\"open\":\"$16.71\",\"high\":\"$16.71\",\"low\":\"$15.64\",\"close\":\"$15.97\",\"volume\":\"242963398\",\"percentChangePrice\":\"-4.42849\",\"percentChangeVolumeOverLastWk\":\"1.380223028\",\"previousWeeksVolume\":\"239655616\",\"nextWeeksOpen\":\"$16.19\",\"nextWeeksClose\":\"$15.79\",\"percentChangeNextWeeksPrice\":\"-2.47066\",\"daysToNextDividend\":\"19\",\"percentReturnNextDividend\":\"0.187852\"}]")));
     }
 
     @Test
@@ -77,14 +97,21 @@ class WebLayerTest {
                 "1,AXP,3/11/2011,$43.86,$45.54,$43.53,$44.28,37613429,0.957592,-3.518293442,38985037,$43.86,$44.17,0.706794,26,0.406504\n" +
                 "1,AXP,3/18/2011,$43.86,$44.47,$42.19,$44.17,41757526,0.706794,11.01759959,37613429,$44.75,$45.59,1.87709,19,0.407516\n" +
                 "1,AXP,3/25/2011,$44.75,$45.61,$44.10,$45.59,30798332,1.87709,-26.24483548,41757526,$45.54,$45.36,-0.395257,12,0.394823";
-        MockMultipartFile tradeData = new MockMultipartFile(      "file",
-                "fileName",
-                "text/plain", s.getBytes(StandardCharsets.UTF_8));
-        when(repository.save(anyList())).thenReturn(24);
-        this.mockMvc.perform(multipart("/api/trade-data/bulk-insert")
+        MockMultipartFile tradeData =
+                new MockMultipartFile("file", "fileName","text/plain", s.getBytes(StandardCharsets.UTF_8));
+
+        when(repository.save(anyList())).thenReturn(CompletableFuture.supplyAsync(() -> Integer.valueOf(24)));
+
+        MvcResult mvcResult = mockMvc.perform(multipart("/api/trade-data/bulk-insert")
                         .file(tradeData)
                         .header("X-client_id","abc"))
-                        .andDo(print()).andExpect(status().isCreated())
+                        .andDo(print())
+                .andExpect(request().asyncStarted())
+                .andDo(MockMvcResultHandlers.log())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(mvcResult))
+                .andExpect(status().isCreated())
                 .andExpect(content().string(containsString("trade data records created:24")));
     }
 }

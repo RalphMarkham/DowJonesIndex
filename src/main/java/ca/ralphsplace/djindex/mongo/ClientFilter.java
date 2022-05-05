@@ -1,4 +1,4 @@
-package ca.ralphsplace.djindex;
+package ca.ralphsplace.djindex.mongo;
 
 import org.springframework.web.filter.OncePerRequestFilter;
 

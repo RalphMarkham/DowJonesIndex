@@ -1,4 +1,4 @@
-package ca.ralphsplace.djindex;
+package ca.ralphsplace.djindex.model;
 
 
 import com.opencsv.bean.CsvBindByName;
@@ -46,25 +46,25 @@ public class TradeDataRecord {
     @CsvBindByName(column = "percent_return_next_dividend")
     private String percentReturnNextDividend;
 
-    public TradeDataRecord(){}
-
-    public TradeDataRecord(String quarter, String stock, String date, String open, String high, String low, String close, String volume, String percentChangePrice, String percentChangeVolumeOverLastWk, String previousWeeksVolume, String nextWeeksOpen, String nextWeeksClose, String percentChangeNextWeeksPrice, String daysToNextDividend, String percentReturnNextDividend) {
-        this.quarter = quarter;
-        this.stock = stock;
-        this.date = date;
-        this.open = open;
-        this.high = high;
-        this.low = low;
-        this.close = close;
-        this.volume = volume;
-        this.percentChangePrice = percentChangePrice;
-        this.percentChangeVolumeOverLastWk = percentChangeVolumeOverLastWk;
-        this.previousWeeksVolume = previousWeeksVolume;
-        this.nextWeeksOpen = nextWeeksOpen;
-        this.nextWeeksClose = nextWeeksClose;
-        this.percentChangeNextWeeksPrice = percentChangeNextWeeksPrice;
-        this.daysToNextDividend = daysToNextDividend;
-        this.percentReturnNextDividend = percentReturnNextDividend;
+    public static TradeDataRecord buildTradeDataRecord(String quarter, String stock, String date, String open, String high, String low, String close, String volume, String percentChangePrice, String percentChangeVolumeOverLastWk, String previousWeeksVolume, String nextWeeksOpen, String nextWeeksClose, String percentChangeNextWeeksPrice, String daysToNextDividend, String percentReturnNextDividend) {
+        TradeDataRecord dataRecord = new TradeDataRecord();
+        dataRecord.setQuarter(quarter);
+        dataRecord.setStock(stock);
+        dataRecord.setDate(date);
+        dataRecord.setOpen(open);
+        dataRecord.setHigh(high);
+        dataRecord.setLow(low);
+        dataRecord.setClose(close);
+        dataRecord.setVolume(volume);
+        dataRecord.setPercentChangePrice(percentChangePrice);
+        dataRecord.setPercentChangeVolumeOverLastWk(percentChangeVolumeOverLastWk);
+        dataRecord.setPreviousWeeksVolume(previousWeeksVolume);
+        dataRecord.setNextWeeksOpen(nextWeeksOpen);
+        dataRecord.setNextWeeksClose(nextWeeksClose);
+        dataRecord.setPercentChangeNextWeeksPrice(percentChangeNextWeeksPrice);
+        dataRecord.setDaysToNextDividend(daysToNextDividend);
+        dataRecord.setPercentReturnNextDividend(percentReturnNextDividend);
+        return dataRecord;
     }
 
     public TradeDataRecord setId() {
