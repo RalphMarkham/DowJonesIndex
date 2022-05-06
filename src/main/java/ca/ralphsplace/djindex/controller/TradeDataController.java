@@ -29,7 +29,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Set;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
@@ -57,7 +58,7 @@ public class TradeDataController {
             @ApiResponse(responseCode = "401", description = "UNAUTHORIZED")})
     @GetMapping(value = "/{stock}", produces = {"application/json"}, headers = {"X-client_id"})
     @Async("controllerAsyncExecutor")
-    public CompletableFuture<ResponseEntity<Set<TradeDataRecord>>> getTradeDataTicker(@RequestHeader("X-client_id") String clientId, @PathVariable final String stock) {
+    public CompletableFuture<ResponseEntity<Collection<TradeDataRecord>>> getTradeDataTicker(@RequestHeader("X-client_id") final String clientId, @PathVariable final String stock) {
         return tradeDataService.findByStock(clientId, stock)
                 .thenApply(ResponseEntity::ok)
                 .exceptionally(t -> {
@@ -75,13 +76,9 @@ public class TradeDataController {
             @ApiResponse(responseCode = "401", description = "UNAUTHORIZED")})
     @PostMapping(value = "/", consumes = {"application/json"}, produces = {"application/json"}, headers = {"X-client_id"})
     @Async("controllerAsyncExecutor")
-    public CompletableFuture<ResponseEntity<String>> createTradeData(@RequestHeader("X-client_id") String clientId, @RequestBody final TradeDataRecord tradeDataRecord) {
-        return tradeDataService.save(new ClientTradeData(clientId, Set.of(tradeDataRecord)))
-                .<ResponseEntity<String>>thenApply(updateResult ->
-                    (updateResult.wasAcknowledged() ?
-                            ResponseEntity.status(HttpStatus.CREATED).build() :
-                            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build())
-                )
+    public CompletableFuture<ResponseEntity<TradeDataRecord>> createTradeData(@RequestHeader("X-client_id") final String clientId, @RequestBody final TradeDataRecord tradeDataRecord) {
+        return tradeDataService.save(tradeDataRecord.toClientTradeData(clientId))
+                .thenApply(r -> ResponseEntity.status(HttpStatus.CREATED).body(r))
                 .exceptionally(t -> {
                     LOG.error(ERROR_MSG, t);
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -97,27 +94,24 @@ public class TradeDataController {
             @ApiResponse(responseCode = "401", description = "UNAUTHORIZED")})
     @PostMapping(value = "/bulk-insert", consumes = {"multipart/form-data"}, produces = {"application/json"}, headers = {"X-client_id"})
     @Async("controllerAsyncExecutor")
-    public CompletableFuture<ResponseEntity<String>> bulkUpdate(@RequestHeader("X-client_id") String clientId, @RequestParam final MultipartFile file) {
-        CompletableFuture<Set<TradeDataRecord>> cfRecords = CompletableFuture.supplyAsync(() -> {
+    public CompletableFuture<ResponseEntity<Collection<TradeDataRecord>>> bulkUpdate(@RequestHeader("X-client_id") final String clientId, @RequestParam final MultipartFile file) {
+        CompletableFuture<List<ClientTradeData>> cfRecords = CompletableFuture.supplyAsync(() -> {
                     try {
                         return new CsvToBeanBuilder<TradeDataRecord>(
                                 new BufferedReader(new InputStreamReader(file.getInputStream())))
                                         .withType(TradeDataRecord.class)
                                         .build()
                                         .stream()
-                                        .collect(Collectors.toSet());
+                                        .map(tdr -> tdr.toClientTradeData(clientId))
+                                        .collect(Collectors.toList());
                     } catch (IOException e) {
                         throw new CompletionException(e);
                     }
                 });
 
         try {
-            return tradeDataService.bulkSave(new ClientTradeData(clientId, cfRecords.join()))
-                    .<ResponseEntity<String>>thenApply(updateResult ->
-                        (updateResult.wasAcknowledged() ?
-                                ResponseEntity.status(HttpStatus.CREATED).build() :
-                                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build())
-                    )
+            return tradeDataService.bulkSave(cfRecords.join())
+                    .thenApply(r -> ResponseEntity.status(HttpStatus.CREATED).body(r))
                     .exceptionally(t -> {
                         LOG.error(ERROR_MSG, t);
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

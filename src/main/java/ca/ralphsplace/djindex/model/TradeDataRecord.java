@@ -8,6 +8,8 @@ import java.util.Objects;
 
 public class TradeDataRecord {
 
+
+
     @CsvBindByName(column = "quarter", required = true)
     private String quarter;
     @CsvBindByName(column = "stock", required = true)
@@ -40,6 +42,7 @@ public class TradeDataRecord {
     private String daysToNextDividend;
     @CsvBindByName(column = "percent_return_next_dividend")
     private String percentReturnNextDividend;
+
 
     public String getQuarter() {
         return quarter;
@@ -167,6 +170,30 @@ public class TradeDataRecord {
 
     public void setPercentReturnNextDividend(String percentReturnNextDividend) {
         this.percentReturnNextDividend = percentReturnNextDividend;
+    }
+
+    public ClientTradeData toClientTradeData(String clientId) {
+        ClientTradeData ctd = new ClientTradeData();
+        ctd.setId(clientId+this.getStock()+this.getDate());
+        ctd.setClientId(clientId);
+        ctd.setQuarter(this.getQuarter());
+        ctd.setStock(this.getStock());
+        ctd.setDate(this.getDate());
+        ctd.setOpen(this.getOpen());
+        ctd.setHigh(this.getHigh());
+        ctd.setLow(this.getLow());
+        ctd.setClose(this.getClose());
+        ctd.setVolume(this.getVolume());
+        ctd.setPercentChangePrice(this.getPercentChangePrice());
+        ctd.setPercentChangeVolumeOverLastWk(this.getPercentChangeVolumeOverLastWk());
+        ctd.setPreviousWeeksVolume(this.getPreviousWeeksVolume());
+        ctd.setNextWeeksOpen(this.getNextWeeksOpen());
+        ctd.setNextWeeksClose(this.getNextWeeksClose());
+        ctd.setPercentChangeNextWeeksPrice(this.getPercentChangeNextWeeksPrice());
+        ctd.setDaysToNextDividend(this.getDaysToNextDividend());
+        ctd.setPercentReturnNextDividend(this.getPercentReturnNextDividend());
+
+        return ctd;
     }
 
     @Override

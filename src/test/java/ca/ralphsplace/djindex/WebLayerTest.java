@@ -1,12 +1,9 @@
 package ca.ralphsplace.djindex;
 
 import ca.ralphsplace.djindex.controller.TradeDataController;
-import ca.ralphsplace.djindex.model.ClientTradeData;
 import ca.ralphsplace.djindex.model.TradeDataRecord;
 import ca.ralphsplace.djindex.service.TradeDataService;
-import com.mongodb.client.result.UpdateResult;
 import com.opencsv.bean.CsvToBeanBuilder;
-import org.bson.BsonValue;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -43,28 +40,7 @@ class WebLayerTest {
 
     @Test
     void shouldReturnSavedTradeData() throws Exception {
-        when(repository.save(new ClientTradeData("abc", Set.of(t1)))).thenReturn(CompletableFuture.completedFuture(new UpdateResult(){
-
-            @Override
-            public boolean wasAcknowledged() {
-                return true;
-            }
-
-            @Override
-            public long getMatchedCount() {
-                return 1;
-            }
-
-            @Override
-            public long getModifiedCount() {
-                return 1;
-            }
-
-            @Override
-            public BsonValue getUpsertedId() {
-                return null;
-            }
-        }));
+        when(repository.save(t1.toClientTradeData("abc"))).thenReturn(CompletableFuture.completedFuture(t1));
 
         MvcResult mvcResult = mockMvc.perform(post("/api/trade-data/").header("X-client_id","abc").contentType("application/json")
                         .content("{\"quarter\":\"1\",\"stock\":\"AA\",\"date\":\"1/14/2011\",\"open\":\"$16.71\",\"high\":\"$16.71\",\"low\":\"$15.64\",\"close\":\"$15.97\",\"volume\":\"242963398\",\"percentChangePrice\":\"-4.42849\",\"percentChangeVolumeOverLastWk\":\"1.380223028\",\"previousWeeksVolume\":\"239655616\",\"nextWeeksOpen\":\"$16.19\",\"nextWeeksClose\":\"$15.79\",\"percentChangeNextWeeksPrice\":\"-2.47066\",\"daysToNextDividend\":\"19\",\"percentReturnNextDividend\":\"0.187852\"}"))
@@ -74,7 +50,8 @@ class WebLayerTest {
                 .andReturn();
 
         mockMvc.perform(asyncDispatch(mvcResult))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(content().string(containsString("{\"quarter\":\"1\",\"stock\":\"AA\",\"date\":\"1/14/2011\",\"open\":\"$16.71\",\"high\":\"$16.71\",\"low\":\"$15.64\",\"close\":\"$15.97\",\"volume\":\"242963398\",\"percentChangePrice\":\"-4.42849\",\"percentChangeVolumeOverLastWk\":\"1.380223028\",\"previousWeeksVolume\":\"239655616\",\"nextWeeksOpen\":\"$16.19\",\"nextWeeksClose\":\"$15.79\",\"percentChangeNextWeeksPrice\":\"-2.47066\",\"daysToNextDividend\":\"19\",\"percentReturnNextDividend\":\"0.187852\"}")));
     }
 
     @Test
@@ -122,34 +99,14 @@ class WebLayerTest {
         MockMultipartFile tradeData =
                 new MockMultipartFile("file", "fileName","text/plain", s.getBytes(StandardCharsets.UTF_8));
 
-        var set = new CsvToBeanBuilder<TradeDataRecord>(new BufferedReader(new StringReader(s)))
+        var tdrList = new CsvToBeanBuilder<TradeDataRecord>(new BufferedReader(new StringReader(s)))
                                         .withType(TradeDataRecord.class)
                 .build()
                 .stream()
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
+        var ctdList = tdrList.stream().map(t -> t.toClientTradeData("abc")).collect(Collectors.toList());
 
-        when(repository.bulkSave(new ClientTradeData("abc", set))).thenReturn(CompletableFuture.supplyAsync(() -> new UpdateResult(){
-
-            @Override
-            public boolean wasAcknowledged() {
-                return true;
-            }
-
-            @Override
-            public long getMatchedCount() {
-                return 1;
-            }
-
-            @Override
-            public long getModifiedCount() {
-                return 1;
-            }
-
-            @Override
-            public BsonValue getUpsertedId() {
-                return null;
-            }
-        }));
+        when(repository.bulkSave(ctdList)).thenReturn(CompletableFuture.completedFuture(tdrList));
 
         MvcResult mvcResult = mockMvc.perform(multipart("/api/trade-data/bulk-insert")
                         .file(tradeData)
