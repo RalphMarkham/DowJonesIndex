@@ -1,20 +1,22 @@
 package ca.ralphsplace.djindex.model;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.TimeSeries;
 
+import java.time.LocalDate;
 import java.util.Objects;
 
-@Document(collection = "weeklyTradeData")
+
+@TimeSeries(collection="weeklyTradeData", timeField = "localDate")
 public class ClientTradeData extends TradeDataRecord {
 
     public static final String WEEKLY_TRADE_DATA = "weeklyTradeData";
     
 
-
     @Id
     private String id;
     private String clientId;
+    private LocalDate localDate;
 
     public String getId() {
         return id;
@@ -31,7 +33,15 @@ public class ClientTradeData extends TradeDataRecord {
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
-    
+
+    public LocalDate getLocalDate() {
+        return localDate;
+    }
+
+    public void setLocalDate(LocalDate localDate) {
+        this.localDate = localDate;
+    }
+
     public TradeDataRecord toTradeDataRecord() {
         TradeDataRecord trd = new TradeDataRecord();
 
@@ -54,7 +64,7 @@ public class ClientTradeData extends TradeDataRecord {
 
         return trd;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

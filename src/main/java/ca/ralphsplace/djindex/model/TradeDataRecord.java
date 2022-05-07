@@ -3,6 +3,7 @@ package ca.ralphsplace.djindex.model;
 
 import com.opencsv.bean.CsvBindByName;
 
+import java.time.LocalDate;
 import java.util.Objects;
 
 
@@ -176,6 +177,7 @@ public class TradeDataRecord {
         ClientTradeData ctd = new ClientTradeData();
         ctd.setId(clientId+this.getStock()+this.getDate());
         ctd.setClientId(clientId);
+        ctd.setLocalDate(str2LocalDate(this.getDate()));
         ctd.setQuarter(this.getQuarter());
         ctd.setStock(this.getStock());
         ctd.setDate(this.getDate());
@@ -194,6 +196,16 @@ public class TradeDataRecord {
         ctd.setPercentReturnNextDividend(this.getPercentReturnNextDividend());
 
         return ctd;
+    }
+
+    private LocalDate str2LocalDate(String str) {
+        int indx1 = str.indexOf('/');
+        int indx2 = str.lastIndexOf('/');
+        int day = Integer.parseInt(str.substring(indx1+1, indx2));
+        int month = Integer.parseInt(str.substring(0, indx1));
+        int year = Integer.parseInt(str.substring(indx2+1));
+
+        return LocalDate.of(year, month, day);
     }
 
     @Override
