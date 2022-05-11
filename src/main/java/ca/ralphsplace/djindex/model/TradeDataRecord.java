@@ -2,19 +2,23 @@ package ca.ralphsplace.djindex.model;
 
 
 import com.opencsv.bean.CsvBindByName;
+import org.springframework.data.mongodb.core.index.Indexed;
 
+import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.util.Objects;
 
 
 public class TradeDataRecord {
 
-
-
     @CsvBindByName(column = "quarter", required = true)
     private String quarter;
+    @NotNull
+    @Indexed
     @CsvBindByName(column = "stock", required = true)
     private String stock;
+    @NotNull
+    @Indexed
     @CsvBindByName(column = "date", required = true)
     private String date;
     @CsvBindByName(column = "open")

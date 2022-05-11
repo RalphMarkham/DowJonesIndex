@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.validation.Valid;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -37,6 +39,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/trade-data")
+@Validated
 public class TradeDataController {
 
     private static final String ERROR_MSG = "error caught exception: ";
@@ -58,7 +61,7 @@ public class TradeDataController {
             @ApiResponse(responseCode = "401", description = "UNAUTHORIZED")})
     @GetMapping(value = "/{stock}", produces = {"application/json"}, headers = {"X-client_id"})
     @Async("controllerAsyncExecutor")
-    public CompletableFuture<ResponseEntity<Collection<TradeDataRecord>>> getTradeDataTicker(@RequestHeader("X-client_id") final String clientId, @PathVariable final String stock) {
+    public CompletableFuture<ResponseEntity<Collection<TradeDataRecord>>> getTradeDataTicker(@Valid @RequestHeader(name="X-client_id") final String clientId, @PathVariable final String stock) {
         return tradeDataService.findByStock(clientId, stock)
                 .thenApply(ResponseEntity::ok)
                 .exceptionally(t -> {
@@ -76,7 +79,7 @@ public class TradeDataController {
             @ApiResponse(responseCode = "401", description = "UNAUTHORIZED")})
     @PostMapping(value = "/", consumes = {"application/json"}, produces = {"application/json"}, headers = {"X-client_id"})
     @Async("controllerAsyncExecutor")
-    public CompletableFuture<ResponseEntity<TradeDataRecord>> createTradeData(@RequestHeader("X-client_id") final String clientId, @RequestBody final TradeDataRecord tradeDataRecord) {
+    public CompletableFuture<ResponseEntity<TradeDataRecord>> createTradeData(@Valid @RequestHeader("X-client_id") final String clientId, @RequestBody final TradeDataRecord tradeDataRecord) {
         return tradeDataService.save(tradeDataRecord.toClientTradeData(clientId))
                 .thenApply(r -> ResponseEntity.status(HttpStatus.CREATED).body(r))
                 .exceptionally(t -> {
@@ -94,7 +97,7 @@ public class TradeDataController {
             @ApiResponse(responseCode = "401", description = "UNAUTHORIZED")})
     @PostMapping(value = "/bulk-insert", consumes = {"multipart/form-data"}, produces = {"application/json"}, headers = {"X-client_id"})
     @Async("controllerAsyncExecutor")
-    public CompletableFuture<ResponseEntity<Collection<TradeDataRecord>>> bulkUpdate(@RequestHeader("X-client_id") final String clientId, @RequestParam final MultipartFile file) {
+    public CompletableFuture<ResponseEntity<Collection<TradeDataRecord>>> bulkUpdate(@Valid @RequestHeader("X-client_id") final String clientId, @RequestParam final MultipartFile file) {
         CompletableFuture<List<ClientTradeData>> cfRecords = CompletableFuture.supplyAsync(() -> {
                     try {
                         return new CsvToBeanBuilder<TradeDataRecord>(

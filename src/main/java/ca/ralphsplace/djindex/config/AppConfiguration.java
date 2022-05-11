@@ -10,10 +10,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class AppConfigurration {
+public class AppConfiguration {
 
     @Bean
-    public OpenAPI customOpenAPI(@Value("@springdoc.version@") String appVersion) {
+    public OpenAPI customOpenAPI(@Value("${version}") String appVersion) {
         return new OpenAPI()
                 .components(new Components())
                 .info(new Info().title("Dow Jones Index Trade Data API").version(appVersion));
@@ -24,6 +24,7 @@ public class AppConfigurration {
         FilterRegistrationBean<ClientFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new ClientFilter());
         registrationBean.addUrlPatterns("/api/trade-data/*");
+
         return registrationBean;
     }
 }

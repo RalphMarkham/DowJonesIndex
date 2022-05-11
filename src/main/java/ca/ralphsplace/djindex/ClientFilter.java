@@ -1,21 +1,33 @@
 package ca.ralphsplace.djindex;
 
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
+import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-public class ClientFilter extends OncePerRequestFilter {
+@Component
+public class ClientFilter implements Filter {
+    private static final Logger LOG = LoggerFactory.getLogger(ClientFilter.class);
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String clientId = request.getHeader("X-client_id");
+    public  void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+
+        HttpServletRequest req = (HttpServletRequest) request;
+        HttpServletResponse res = (HttpServletResponse) response;
+
+        String clientId = req.getHeader("X-client_id");
         if (clientId == null || clientId.trim().isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         } else {
+            LOG.info("Logging Request  {} : {}", req.getMethod(), req.getRequestURI());
             filterChain.doFilter(request,response);
         }
     }

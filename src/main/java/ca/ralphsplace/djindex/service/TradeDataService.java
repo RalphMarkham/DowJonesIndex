@@ -34,8 +34,7 @@ public class TradeDataService {
     @Transactional
     @Async("serviceAsyncExecutor")
     public CompletableFuture<Collection<TradeDataRecord>> bulkSave(final List<ClientTradeData> ctdList) {
-        return CompletableFuture
-                .supplyAsync(() -> mt.insert(ctdList, ClientTradeData.WEEKLY_TRADE_DATA)
+        return CompletableFuture.supplyAsync(() -> mt.insert(ctdList, ClientTradeData.WEEKLY_TRADE_DATA)
                         .stream().map(ClientTradeData::toTradeDataRecord).collect(Collectors.toList()));
     }
 

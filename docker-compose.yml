@@ -3,7 +3,7 @@ version: '3.3'
 services:
   #service 1: definition of mongo database
   mongo_db:
-    image: mongo
+    image: mongo:4.4.12
     container_name: mongoDB
     restart: always
     ports:
@@ -16,7 +16,7 @@ services:
     restart: always
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: src/main/docker/app/Dockerfile
     ports:
       - "8080:8080"
     depends_on:

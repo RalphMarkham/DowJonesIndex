@@ -2,8 +2,7 @@ package ca.ralphsplace.djindex.config;
 
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import org.springframework.aop.interceptor.SimpleAsyncUncaughtExceptionHandler;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
@@ -14,14 +13,12 @@ import java.util.concurrent.Executor;
 
 @Configuration
 @EnableAsync
-@EnableConfigurationProperties(ThreadPoolTaskProperties.class)
 public class AsyncConfig implements AsyncConfigurer {
 
-    @Autowired
-    private final ThreadPoolTaskProperties threadPoolTaskProperties;
+    private final TaskExecutionProperties taskExecutionProperties;
 
-    public AsyncConfig(ThreadPoolTaskProperties threadPoolTaskProperties) {
-        this.threadPoolTaskProperties = threadPoolTaskProperties;
+    public AsyncConfig(TaskExecutionProperties taskExecutionProperties) {
+        this.taskExecutionProperties = taskExecutionProperties;
     }
 
     @Override
@@ -46,9 +43,9 @@ public class AsyncConfig implements AsyncConfigurer {
 
     private Executor newThreadPoolTaskExecutor(String namePrefix) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(threadPoolTaskProperties.getCorePoolSize());
-        executor.setMaxPoolSize(threadPoolTaskProperties.getMaxPoolSize());
-        executor.setQueueCapacity(threadPoolTaskProperties.getMaxPoolSize());
+        executor.setCorePoolSize(taskExecutionProperties.getPool().getCoreSize());
+        executor.setMaxPoolSize(taskExecutionProperties.getPool().getMaxSize());
+        executor.setQueueCapacity(taskExecutionProperties.getPool().getQueueCapacity());
         executor.setThreadNamePrefix(namePrefix);
         executor.initialize();
         return executor;

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -27,10 +28,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(TradeDataController.class)
+@WebMvcTest(value=TradeDataController.class, includeFilters={@ComponentScan.Filter})
 class WebLayerTest {
 
-    TradeDataRecord t1 = buildTradeDataRecord("1","AA","1/14/2011","$16.71","$16.71","$15.64","$15.97","242963398","-4.42849","1.380223028","239655616","$16.19","$15.79","-2.47066","19","0.187852");
+    TradeDataRecord t1 = TradeDataRecordUtil.buildTradeDataRecord("1","AA","1/14/2011","$16.71","$16.71","$15.64","$15.97","242963398","-4.42849","1.380223028","239655616","$16.19","$15.79","-2.47066","19","0.187852");
 
     @Autowired
     private MockMvc mockMvc;
@@ -120,24 +121,15 @@ class WebLayerTest {
                 .andExpect(status().isCreated());
     }
 
-    private static TradeDataRecord buildTradeDataRecord(String quarter, String stock, String date, String open, String high, String low, String close, String volume, String percentChangePrice, String percentChangeVolumeOverLastWk, String previousWeeksVolume, String nextWeeksOpen, String nextWeeksClose, String percentChangeNextWeeksPrice, String daysToNextDividend, String percentReturnNextDividend) {
-        TradeDataRecord dataRecord = new TradeDataRecord();
-        dataRecord.setQuarter(quarter);
-        dataRecord.setStock(stock);
-        dataRecord.setDate(date);
-        dataRecord.setOpen(open);
-        dataRecord.setHigh(high);
-        dataRecord.setLow(low);
-        dataRecord.setClose(close);
-        dataRecord.setVolume(volume);
-        dataRecord.setPercentChangePrice(percentChangePrice);
-        dataRecord.setPercentChangeVolumeOverLastWk(percentChangeVolumeOverLastWk);
-        dataRecord.setPreviousWeeksVolume(previousWeeksVolume);
-        dataRecord.setNextWeeksOpen(nextWeeksOpen);
-        dataRecord.setNextWeeksClose(nextWeeksClose);
-        dataRecord.setPercentChangeNextWeeksPrice(percentChangeNextWeeksPrice);
-        dataRecord.setDaysToNextDividend(daysToNextDividend);
-        dataRecord.setPercentReturnNextDividend(percentReturnNextDividend);
-        return dataRecord;
+    @Test
+    void testUnauthorized() throws Exception {
+        mockMvc
+            .perform(multipart("/api/trade-data/bulk-insert"))
+            .andExpect(status().isUnauthorized());
+
+        mockMvc
+            .perform(get("/api/trade-data/RST"))
+            .andExpect(status().isUnauthorized());
     }
+
 }
