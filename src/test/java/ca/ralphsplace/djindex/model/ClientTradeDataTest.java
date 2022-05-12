@@ -1,15 +1,15 @@
 package ca.ralphsplace.djindex.model;
 
-import ca.ralphsplace.djindex.TradeDataRecordUtil;
+import ca.ralphsplace.djindex.StockDataRecordUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class ClientTradeDataTest {
-    TradeDataRecord t1 = TradeDataRecordUtil.buildTradeDataRecord("1","AA","1/14/2011","$16.71","$16.71","$15.64","$15.97","242963398","-4.42849","1.380223028","239655616","$16.19","$15.79","-2.47066","19","0.187852");
+    StockDataRecord t1 = StockDataRecordUtil.buildTradeDataRecord("1","AA","1/14/2011","$16.71","$16.71","$15.64","$15.97","242963398","-4.42849","1.380223028","239655616","$16.19","$15.79","-2.47066","19","0.187852");
 
     @Test
     void toTradeDataRecord() {
-        ClientTradeData c1 = t1.toClientTradeData("abc123");
+        ClientStockData c1 = t1.toClientTradeData("abc123");
         Assertions.assertEquals(t1.getDate(), c1.toTradeDataRecord().getDate());
         Assertions.assertEquals(t1.getStock(), c1.toTradeDataRecord().getStock());
         Assertions.assertEquals(t1.getClose(), c1.toTradeDataRecord().getClose());

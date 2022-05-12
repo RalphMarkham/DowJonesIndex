@@ -1,6 +1,6 @@
 spring:
   application:
-    name: 'dji-trade-data'
+    name: 'dji-stock-data'
 
   data:
     mongodb:

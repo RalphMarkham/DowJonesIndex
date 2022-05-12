@@ -7,11 +7,10 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 
-@TimeSeries(collection="weeklyTradeData", timeField = "localDate")
-public class ClientTradeData extends TradeDataRecord {
+@TimeSeries(collection="weeklyStockData", timeField = "localDate")
+public class ClientStockData extends StockDataRecord {
 
-    public static final String WEEKLY_TRADE_DATA = "weeklyTradeData";
-    
+    public static final String WEEKLY_STOCK_DATA = "weeklyStockData";
 
     @Id
     private String id;
@@ -42,8 +41,8 @@ public class ClientTradeData extends TradeDataRecord {
         this.localDate = localDate;
     }
 
-    public TradeDataRecord toTradeDataRecord() {
-        TradeDataRecord trd = new TradeDataRecord();
+    public StockDataRecord toTradeDataRecord() {
+        StockDataRecord trd = new StockDataRecord();
 
         trd.setQuarter(this.getQuarter());
         trd.setStock(this.getStock());
@@ -70,7 +69,7 @@ public class ClientTradeData extends TradeDataRecord {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        ClientTradeData that = (ClientTradeData) o;
+        ClientStockData that = (ClientStockData) o;
         return id.equals(that.id);
     }
 

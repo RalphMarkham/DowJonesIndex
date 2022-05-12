@@ -2,7 +2,7 @@ package ca.ralphsplace.djindex;
 
 import ca.ralphsplace.djindex.model.StockDataRecord;
 
-public class TradeDataRecordUtil {
+public class StockDataRecordUtil {
 
     public static StockDataRecord buildTradeDataRecord(String quarter, String stock, String date, String open, String high, String low, String close, String volume, String percentChangePrice, String percentChangeVolumeOverLastWk, String previousWeeksVolume, String nextWeeksOpen, String nextWeeksClose, String percentChangeNextWeeksPrice, String daysToNextDividend, String percentReturnNextDividend) {
         StockDataRecord dataRecord = new StockDataRecord();

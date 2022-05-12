@@ -16,14 +16,14 @@ public class AppConfiguration {
     public OpenAPI customOpenAPI(@Value("${version}") String appVersion) {
         return new OpenAPI()
                 .components(new Components())
-                .info(new Info().title("Dow Jones Index Trade Data API").version(appVersion));
+                .info(new Info().title("Dow Jones Index Stock Data API").version(appVersion));
     }
 
     @Bean
     public FilterRegistrationBean<ClientFilter> tenantFilter() {
         FilterRegistrationBean<ClientFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new ClientFilter());
-        registrationBean.addUrlPatterns("/api/trade-data/*");
+        registrationBean.addUrlPatterns("/api/stock-data/*");
 
         return registrationBean;
     }

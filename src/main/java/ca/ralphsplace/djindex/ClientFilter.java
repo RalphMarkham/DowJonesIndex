@@ -23,7 +23,7 @@ public class ClientFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
 
-        String clientId = req.getHeader("X-client_id");
+        String clientId = req.getHeader("X-Client_Id");
         if (clientId == null || clientId.trim().isEmpty()) {
             res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         } else {

@@ -1,8 +1,8 @@
 package ca.ralphsplace.djindex;
 
-import ca.ralphsplace.djindex.controller.TradeDataController;
-import ca.ralphsplace.djindex.model.TradeDataRecord;
-import ca.ralphsplace.djindex.service.TradeDataService;
+import ca.ralphsplace.djindex.controller.StockDataController;
+import ca.ralphsplace.djindex.model.StockDataRecord;
+import ca.ralphsplace.djindex.service.StockDataService;
 import com.opencsv.bean.CsvToBeanBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,22 +28,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(value=TradeDataController.class, includeFilters={@ComponentScan.Filter})
+@WebMvcTest(value= StockDataController.class, includeFilters={@ComponentScan.Filter})
 class WebLayerTest {
 
-    TradeDataRecord t1 = TradeDataRecordUtil.buildTradeDataRecord("1","AA","1/14/2011","$16.71","$16.71","$15.64","$15.97","242963398","-4.42849","1.380223028","239655616","$16.19","$15.79","-2.47066","19","0.187852");
+    StockDataRecord t1 = StockDataRecordUtil.buildTradeDataRecord("1","AA","1/14/2011","$16.71","$16.71","$15.64","$15.97","242963398","-4.42849","1.380223028","239655616","$16.19","$15.79","-2.47066","19","0.187852");
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
-    private TradeDataService repository;
+    private StockDataService repository;
 
     @Test
     void shouldReturnSavedTradeData() throws Exception {
         when(repository.save(t1.toClientTradeData("abc"))).thenReturn(CompletableFuture.completedFuture(t1));
 
-        MvcResult mvcResult = mockMvc.perform(post("/api/trade-data/").header("X-client_id","abc").contentType("application/json")
+        MvcResult mvcResult = mockMvc.perform(post("/api/stock-data/").header("X-Client_Id","abc").contentType("application/json")
                         .content("{\"quarter\":\"1\",\"stock\":\"AA\",\"date\":\"1/14/2011\",\"open\":\"$16.71\",\"high\":\"$16.71\",\"low\":\"$15.64\",\"close\":\"$15.97\",\"volume\":\"242963398\",\"percentChangePrice\":\"-4.42849\",\"percentChangeVolumeOverLastWk\":\"1.380223028\",\"previousWeeksVolume\":\"239655616\",\"nextWeeksOpen\":\"$16.19\",\"nextWeeksClose\":\"$15.79\",\"percentChangeNextWeeksPrice\":\"-2.47066\",\"daysToNextDividend\":\"19\",\"percentReturnNextDividend\":\"0.187852\"}"))
                 .andDo(print())
                 .andExpect(request().asyncStarted())
@@ -59,7 +59,7 @@ class WebLayerTest {
     void shouldReturnQueriedTradeData() throws Exception {
         when(repository.findByStock("abc","AA")).thenReturn(CompletableFuture.completedFuture(Set.of(t1)));
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/trade-data/AA").header("X-client_id","abc"))
+        MvcResult mvcResult = mockMvc.perform(get("/api/stock-data/AA").header("X-Client_Id","abc"))
                 .andDo(print())
                 .andExpect(request().asyncStarted())
                 .andDo(MockMvcResultHandlers.log())
@@ -100,8 +100,8 @@ class WebLayerTest {
         MockMultipartFile tradeData =
                 new MockMultipartFile("file", "fileName","text/plain", s.getBytes(StandardCharsets.UTF_8));
 
-        var tdrList = new CsvToBeanBuilder<TradeDataRecord>(new BufferedReader(new StringReader(s)))
-                                        .withType(TradeDataRecord.class)
+        var tdrList = new CsvToBeanBuilder<StockDataRecord>(new BufferedReader(new StringReader(s)))
+                                        .withType(StockDataRecord.class)
                 .build()
                 .stream()
                 .collect(Collectors.toList());
@@ -109,9 +109,9 @@ class WebLayerTest {
 
         when(repository.bulkSave(ctdList)).thenReturn(CompletableFuture.completedFuture(tdrList));
 
-        MvcResult mvcResult = mockMvc.perform(multipart("/api/trade-data/bulk-insert")
+        MvcResult mvcResult = mockMvc.perform(multipart("/api/stock-data/bulk-insert")
                         .file(tradeData)
-                        .header("X-client_id","abc"))
+                        .header("X-Client_Id","abc"))
                         .andDo(print())
                 .andExpect(request().asyncStarted())
                 .andDo(MockMvcResultHandlers.log())
@@ -124,11 +124,11 @@ class WebLayerTest {
     @Test
     void testUnauthorized() throws Exception {
         mockMvc
-            .perform(multipart("/api/trade-data/bulk-insert"))
+            .perform(multipart("/api/stock-data/bulk-insert"))
             .andExpect(status().isUnauthorized());
 
         mockMvc
-            .perform(get("/api/trade-data/RST"))
+            .perform(get("/api/stock-data/RST"))
             .andExpect(status().isUnauthorized());
     }
 

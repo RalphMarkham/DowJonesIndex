@@ -1,6 +1,6 @@
 package ca.ralphsplace.djindex;
 
-import ca.ralphsplace.djindex.controller.TradeDataController;
+import ca.ralphsplace.djindex.controller.StockDataController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,7 +12,7 @@ class DjindexApplicationTests {
 
 
 	@Autowired
-	TradeDataController controller;
+    StockDataController controller;
 
 	@Test
 	void contextLoads() throws Exception {

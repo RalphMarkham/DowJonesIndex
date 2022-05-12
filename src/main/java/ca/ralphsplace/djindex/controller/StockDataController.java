@@ -1,8 +1,8 @@
 package ca.ralphsplace.djindex.controller;
 
-import ca.ralphsplace.djindex.model.ClientTradeData;
-import ca.ralphsplace.djindex.model.TradeDataRecord;
-import ca.ralphsplace.djindex.service.TradeDataService;
+import ca.ralphsplace.djindex.model.ClientStockData;
+import ca.ralphsplace.djindex.model.StockDataRecord;
+import ca.ralphsplace.djindex.service.StockDataService;
 import com.opencsv.bean.CsvToBeanBuilder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -38,31 +38,31 @@ import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/trade-data")
+@RequestMapping("/api/stock-data")
 @Validated
-public class TradeDataController {
+public class StockDataController {
 
     private static final String ERROR_MSG = "error caught exception: ";
-    private static final Logger LOG = LoggerFactory.getLogger(TradeDataController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StockDataController.class);
 
     @Autowired
-    private final TradeDataService tradeDataService;
+    private final StockDataService stockDataService;
 
-    public TradeDataController(TradeDataService tradeDataService) {
-        this.tradeDataService = tradeDataService;
+    public StockDataController(StockDataService stockDataService) {
+        this.stockDataService = stockDataService;
     }
 
     @Operation(summary = "Get weekly trade data for a stock")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Found trade data",
                     content = { @Content(mediaType = "application/json",
-                            array = @ArraySchema( schema = @Schema(implementation = TradeDataRecord.class))) }),
+                            array = @ArraySchema( schema = @Schema(implementation = StockDataRecord.class))) }),
             @ApiResponse(responseCode = "400", description = "Invalid stock supplied", content = @Content),
             @ApiResponse(responseCode = "401", description = "UNAUTHORIZED")})
-    @GetMapping(value = "/{stock}", produces = {"application/json"}, headers = {"X-client_id"})
+    @GetMapping(value = "/{stock}", produces = {"application/json"}, headers = {"X-Client_Id"})
     @Async("controllerAsyncExecutor")
-    public CompletableFuture<ResponseEntity<Collection<TradeDataRecord>>> getTradeDataTicker(@Valid @RequestHeader(name="X-client_id") final String clientId, @PathVariable final String stock) {
-        return tradeDataService.findByStock(clientId, stock)
+    public CompletableFuture<ResponseEntity<Collection<StockDataRecord>>> getTradeDataTicker(@Valid @RequestHeader(name="X-Client_Id") final String clientId, @PathVariable final String stock) {
+        return stockDataService.findByStock(clientId, stock)
                 .thenApply(ResponseEntity::ok)
                 .exceptionally(t -> {
                     LOG.error(ERROR_MSG, t);
@@ -74,13 +74,13 @@ public class TradeDataController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Trade data created",
                     content = { @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = TradeDataRecord.class)) }),
+                            schema = @Schema(implementation = StockDataRecord.class)) }),
             @ApiResponse(responseCode = "400", description = "Invalid trade data supplied", content = @Content),
             @ApiResponse(responseCode = "401", description = "UNAUTHORIZED")})
-    @PostMapping(value = "/", consumes = {"application/json"}, produces = {"application/json"}, headers = {"X-client_id"})
+    @PostMapping(value = "/", consumes = {"application/json"}, produces = {"application/json"}, headers = {"X-Client_Id"})
     @Async("controllerAsyncExecutor")
-    public CompletableFuture<ResponseEntity<TradeDataRecord>> createTradeData(@Valid @RequestHeader("X-client_id") final String clientId, @RequestBody final TradeDataRecord tradeDataRecord) {
-        return tradeDataService.save(tradeDataRecord.toClientTradeData(clientId))
+    public CompletableFuture<ResponseEntity<StockDataRecord>> createTradeData(@Valid @RequestHeader("X-Client_Id") final String clientId, @RequestBody final StockDataRecord stockDataRecord) {
+        return stockDataService.save(stockDataRecord.toClientTradeData(clientId))
                 .thenApply(r -> ResponseEntity.status(HttpStatus.CREATED).body(r))
                 .exceptionally(t -> {
                     LOG.error(ERROR_MSG, t);
@@ -95,14 +95,14 @@ public class TradeDataController {
                             schema = @Schema(implementation = String.class)) }),
             @ApiResponse(responseCode = "400", description = "Invalid trade data supplied", content = @Content),
             @ApiResponse(responseCode = "401", description = "UNAUTHORIZED")})
-    @PostMapping(value = "/bulk-insert", consumes = {"multipart/form-data"}, produces = {"application/json"}, headers = {"X-client_id"})
+    @PostMapping(value = "/bulk-insert", consumes = {"multipart/form-data"}, produces = {"application/json"}, headers = {"X-Client_Id"})
     @Async("controllerAsyncExecutor")
-    public CompletableFuture<ResponseEntity<Collection<TradeDataRecord>>> bulkUpdate(@Valid @RequestHeader("X-client_id") final String clientId, @RequestParam final MultipartFile file) {
-        CompletableFuture<List<ClientTradeData>> cfRecords = CompletableFuture.supplyAsync(() -> {
+    public CompletableFuture<ResponseEntity<Collection<StockDataRecord>>> bulkUpdate(@Valid @RequestHeader("X-Client_Id") final String clientId, @RequestParam final MultipartFile file) {
+        CompletableFuture<List<ClientStockData>> cfRecords = CompletableFuture.supplyAsync(() -> {
                     try {
-                        return new CsvToBeanBuilder<TradeDataRecord>(
+                        return new CsvToBeanBuilder<StockDataRecord>(
                                 new BufferedReader(new InputStreamReader(file.getInputStream())))
-                                        .withType(TradeDataRecord.class)
+                                        .withType(StockDataRecord.class)
                                         .build()
                                         .stream()
                                         .map(tdr -> tdr.toClientTradeData(clientId))
@@ -113,7 +113,7 @@ public class TradeDataController {
                 });
 
         try {
-            return tradeDataService.bulkSave(cfRecords.join())
+            return stockDataService.bulkSave(cfRecords.join())
                     .thenApply(r -> ResponseEntity.status(HttpStatus.CREATED).body(r))
                     .exceptionally(t -> {
                         LOG.error(ERROR_MSG, t);

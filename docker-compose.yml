@@ -10,9 +10,9 @@ services:
       - "27017:27017"
 
   #service 2: definition of your spring-boot app
-  tradedataservice:
-    image: dji-trade-data-service
-    container_name: dji-trade-data-app
+  stockdataservice:
+    image: dji-stock-data-service
+    container_name: dji-stock-data-app
     restart: always
     build:
       context: .

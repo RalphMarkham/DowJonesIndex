@@ -9,7 +9,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 
-public class TradeDataRecord {
+public class StockDataRecord {
 
     @CsvBindByName(column = "quarter", required = true)
     private String quarter;
@@ -177,8 +177,8 @@ public class TradeDataRecord {
         this.percentReturnNextDividend = percentReturnNextDividend;
     }
 
-    public ClientTradeData toClientTradeData(String clientId) {
-        ClientTradeData ctd = new ClientTradeData();
+    public ClientStockData toClientTradeData(String clientId) {
+        ClientStockData ctd = new ClientStockData();
         ctd.setId(clientId+this.getStock()+this.getDate());
         ctd.setClientId(clientId);
         ctd.setLocalDate(str2LocalDate(this.getDate()));
@@ -216,7 +216,7 @@ public class TradeDataRecord {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        TradeDataRecord that = (TradeDataRecord) o;
+        StockDataRecord that = (StockDataRecord) o;
         return stock.equals(that.stock) && date.equals(that.date);
     }
 
